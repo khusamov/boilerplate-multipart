@@ -30,18 +30,22 @@ export default class App extends Component {
 	 */
 	private static async fetchMultipartSample() {
 		const response = await fetch('http://localhost:5050/multipart-sample-body');
+		const parts = await App.parseMultipartFromResponse(response);
+		const partsAsStringArray = parts.map(item => App.uint8Array2String(item));
+		console.group('Части файла в виде текста');
+		console.log(partsAsStringArray);
+		console.groupEnd();
+	}
 
+	private static async parseMultipartFromResponse(response: Response) {
 		const contentType = response.headers.get('Content-Type');
 		if (!contentType) throw new Error('Ожидается заголовок Content-Type');
+		return App.parseMultipart(contentType, new Uint8Array(await response.arrayBuffer()));
+	}
 
+	private static parseMultipart(contentType: string, data: Uint8Array) {
 		const boundary = App.getBoundaryFromContentType(contentType);
-		const data: Uint8Array = new Uint8Array(await response.arrayBuffer());
-
-		const parts = App.parseMultipartData(boundary, data);
-		const partsAsStringArray = parts.map(item => App.uint8Array2String(item));
-
-		console.log('Части файла:', partsAsStringArray);
-
+		return App.parseMultipartData(boundary, data);
 	}
 
 	/**
